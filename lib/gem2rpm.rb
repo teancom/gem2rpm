@@ -102,7 +102,7 @@ module Gem2Rpm
 Summary: <%= spec.summary.gsub(/\.$/, "") %>
 Name: rubygem-%{gemname}
 Version: <%= spec.version %>
-Release: 1%{?dist}
+Release: 1%{?_dist}
 Group: Development/Languages
 License: GPLv2+ or Ruby
 <% if spec.homepage %>
@@ -138,6 +138,7 @@ Requires: rubygem(<%= d.name %>) <%= req  %>
 <% end %>
 <% end %>
 <% end %>
+BuildRoot: %{_tmppath}/%{name}-%{version}-root-%(%{__id_u} -n)
 <% for req in rubygems_requirement %>
 BuildRequires: rubygems <%= req %>
 <% end %>
