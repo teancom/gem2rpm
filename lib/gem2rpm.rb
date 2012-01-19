@@ -43,7 +43,7 @@ module Gem
 end
 
 module Gem2Rpm
-  Gem2Rpm::VERSION = "0.6.0"
+  Gem2Rpm::VERSION = "0.6.2"
 
   if HAS_REMOTE_INSTALLER
     def self.find_download_url(name, version)
@@ -98,6 +98,7 @@ module Gem2Rpm
 %global gemname <%= spec.name %>
 %global geminstdir %{gemdir}/gems/%{gemname}-%{version}
 %global rubyabi 1.8
+%global ruby_sitearch %(ruby -rrbconfig -e 'puts Config::CONFIG["sitearchdir"] ')
 
 Summary: <%= spec.summary.gsub(/\.$/, "") %>
 Name: rubygem-%{gemname}
@@ -168,21 +169,36 @@ Provides: ruby(<%= p %>) = %{version}
 <% end # if nongem %>
 
 %prep
+<% if not spec.extensions.empty? %>
+%setup -q -T -c
+<% end %>
 
 %build
+mkdir -p ./%{gemdir}
+export CONFIGURE_ARGS="--with-cflags='%{optflags}' --libdir=%{_libdir}"
+<% rdoc_opt = spec.has_rdoc ? "--rdoc " : "" %>
+gem install --local --install-dir ./%{gemdir} -V \
+            --force <%= rdoc_opt %>%{SOURCE0}
 
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}%{gemdir}
-<% rdoc_opt = spec.has_rdoc ? "--rdoc " : "" %>
-gem install --local --install-dir %{buildroot}%{gemdir} \
-            --force <%= rdoc_opt %>%{SOURCE0}
+cp -a ./%{gemdir}/* %{buildroot}%{gemdir}
 <% unless spec.executables.empty? %>
 mkdir -p %{buildroot}/%{_bindir}
 mv %{buildroot}%{gemdir}/bin/* %{buildroot}/%{_bindir}
 rmdir %{buildroot}%{gemdir}/bin
 find %{buildroot}%{geminstdir}/bin -type f | xargs chmod a+x
 <% end %>
+
+find $RPM_BUILD_ROOT/usr -type f -print | \
+        sed "s@^$RPM_BUILD_ROOT@@g" > %{gemname}-%{version}-filelist
+
+if [ "$(cat %{gemname}-%{version}-filelist)X" = "X" ] ; then
+    echo "ERROR: EMPTY FILE LIST"
+    exit -1
+fi
+
 <% if nongem %>
 mkdir -p %{buildroot}%{ruby_sitelib}
 <% spec.files.select{ |f| spec.require_paths.include?(File::dirname(f)) }.each do |p| %>
@@ -193,20 +209,8 @@ ln -s %{gemdir}/gems/%{gemname}-%{version}/<%= p %> %{buildroot}%{ruby_sitelib}
 %clean
 rm -rf %{buildroot}
 
-%files
+%files -f %{gemname}-%{version}-filelist
 %defattr(-, root, root, -)
-<% for f in spec.executables %>
-%{_bindir}/<%= f %>
-<% end %>
-%{gemdir}/gems/%{gemname}-%{version}/
-<% if spec.has_rdoc %>
-%doc %{gemdir}/doc/%{gemname}-%{version}
-<% end %>
-<% for f in spec.extra_rdoc_files %>
-%doc %{geminstdir}/<%= f %>
-<% end %>
-%{gemdir}/cache/%{gemname}-%{version}.gem
-%{gemdir}/specifications/%{gemname}-%{version}.gemspec
 
 <% if nongem %>
 %files -n ruby-%{gemname}
