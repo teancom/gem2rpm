@@ -169,21 +169,23 @@ Provides: ruby(<%= p %>) = %{version}
 <% end # if nongem %>
 
 %prep
+rm -rf %{buildroot}
+rm -rf ./%{name}
 <% if not spec.extensions.empty? %>
 %setup -q -T -c
 <% end %>
 
 %build
-mkdir -p ./%{gemdir}
+mkdir -p ./%{name}/%{gemdir}
 export CONFIGURE_ARGS="--with-cflags='%{optflags}' --libdir=%{_libdir}"
 <% rdoc_opt = spec.has_rdoc ? "--rdoc " : "" %>
-gem install --local --install-dir ./%{gemdir} -V \
+gem install --local --install-dir ./%{name}/%{gemdir} -V \
             --force <%= rdoc_opt %>%{SOURCE0}
 
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}%{gemdir}
-cp -a ./%{gemdir}/* %{buildroot}%{gemdir}
+cp -a ./%{name}/%{gemdir}/* %{buildroot}%{gemdir}
 <% unless spec.executables.empty? %>
 mkdir -p %{buildroot}/%{_bindir}
 mv %{buildroot}%{gemdir}/bin/* %{buildroot}/%{_bindir}
@@ -191,10 +193,11 @@ rmdir %{buildroot}%{gemdir}/bin
 find %{buildroot}%{geminstdir}/bin -type f | xargs chmod a+x
 <% end %>
 
-find $RPM_BUILD_ROOT/usr -type f -print | \
-        sed "s@^$RPM_BUILD_ROOT@@g" > %{gemname}-%{version}-filelist
+cd ./%{name}
+find ./usr -type f -print | \
+        sed "s@^./@@g" > ../%{gemname}-%{version}-filelist
 
-if [ "$(cat %{gemname}-%{version}-filelist)X" = "X" ] ; then
+if [ "$(cat ../%{gemname}-%{version}-filelist)X" = "X" ] ; then
     echo "ERROR: EMPTY FILE LIST"
     exit -1
 fi
