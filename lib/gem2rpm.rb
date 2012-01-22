@@ -193,11 +193,11 @@ rmdir %{buildroot}%{gemdir}/bin
 find %{buildroot}%{geminstdir}/bin -type f | xargs chmod a+x
 <% end %>
 
-cd ./%{name}
+cd %{buildroot}
 find ./usr -type f -print | \
-        sed "s@^\.@@g" > ../%{gemname}-%{version}-filelist
+        sed "s@^\.@@g" > %{_tmppath}/%{gemname}-%{version}-filelist
 
-if [ "$(cat ../%{gemname}-%{version}-filelist)X" = "X" ] ; then
+if [ "$(cat %{_tmppath}/%{gemname}-%{version}-filelist)X" = "X" ] ; then
     echo "ERROR: EMPTY FILE LIST"
     exit -1
 fi
@@ -211,8 +211,9 @@ ln -s %{gemdir}/gems/%{gemname}-%{version}/<%= p %> %{buildroot}%{ruby_sitelib}
 
 %clean
 rm -rf %{buildroot}
+rm -f %{_tmppath}/%{gemname}-%{version}-filelist
 
-%files -f %{gemname}-%{version}-filelist
+%files -f %{_tmppath}/%{gemname}-%{version}-filelist
 %defattr(-, root, root, -)
 
 <% if nongem %>
