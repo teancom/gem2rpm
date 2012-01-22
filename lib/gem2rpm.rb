@@ -195,7 +195,7 @@ find %{buildroot}%{geminstdir}/bin -type f | xargs chmod a+x
 
 cd ./%{name}
 find ./usr -type f -print | \
-        sed "s@^./@@g" > ../%{gemname}-%{version}-filelist
+        sed "s@^\.@@g" > ../%{gemname}-%{version}-filelist
 
 if [ "$(cat ../%{gemname}-%{version}-filelist)X" = "X" ] ; then
     echo "ERROR: EMPTY FILE LIST"
