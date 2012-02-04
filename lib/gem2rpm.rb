@@ -212,6 +212,7 @@ ln -s %{gemdir}/gems/%{gemname}-%{version}/<%= p %> %{buildroot}%{ruby_sitelib}
 %clean
 rm -rf %{buildroot}
 rm -f %{_tmppath}/%{gemname}-%{version}-filelist
+rm -rf %{_tmppath}/%{gemname}-%{version}
 
 %files -f %{_tmppath}/%{gemname}-%{version}-filelist
 %defattr(-, root, root, -)
